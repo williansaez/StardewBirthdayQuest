@@ -408,9 +408,9 @@ namespace BirthdayQuest
                 {
                     foreach (var npc in birthday.Value)
                     {
-                        if (this.Config.SkipUnknownNpcs && !IsNpcKnown(npc)
+                        if (this.Config.SkipUnknownNpcs && !IsNpcKnown(npc))
                         {
-                                continue;
+                            continue;
                         }
                         
                         string orderId = $"BirthdayQuest.{npc}.BirthdayGift";
