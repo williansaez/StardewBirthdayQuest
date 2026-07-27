@@ -6,6 +6,7 @@ using StardewValley.GameData.Characters;
 using StardewValley.Menus;
 using StardewValley.GameData.SpecialOrders;
 using StardewValley.GameData.Objects;
+using StardewValley.TokenizableStrings;
 using Microsoft.Xna.Framework.Graphics;
 using System.Diagnostics;
 
@@ -144,7 +145,7 @@ namespace BirthdayQuest
                     birthdays[birthSeasonDay] = new Dictionary<string, string>();
                 }
 
-                birthdays[birthSeasonDay].Add(npc.Key, data.DisplayName);
+                birthdays[birthSeasonDay].Add(npc.Key, TokenParser.ParseText(data.DisplayName));
             }
 
             return birthdays;
@@ -193,7 +194,7 @@ namespace BirthdayQuest
             foreach (var id in npcLoved){
                 if (allObjectData.TryGetValue(id, out var itemData))
                 {
-                    lovedItems.Add(itemData.DisplayName);
+                    lovedItems.Add(TokenParser.ParseText(itemData.DisplayName));
                 }
             }
 
