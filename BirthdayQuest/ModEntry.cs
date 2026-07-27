@@ -115,10 +115,10 @@ namespace BirthdayQuest
         ** helper funcs - getting birthdays
         *********/
 
-        // get birthdays - key: season/ day and value: npc names
-        private Dictionary< (Season season, int Day), List<string>> GetAllBirthdays()
+        // get birthdays - key: season/ day and value: dict: <npc name, npc display name>
+        private Dictionary< (Season season, int Day), Dictionary<string, string>> GetAllBirthdays()
         {
-            var birthdays = new Dictionary< (Season season, int Day), List<string>>();
+            var birthdays = new Dictionary< (Season season, int Day), Dictionary<string, string>>();
 
             foreach (var npc in allCharacterData)
             {
@@ -139,12 +139,12 @@ namespace BirthdayQuest
 
                 var birthSeasonDay = (data.BirthSeason.Value, data.BirthDay);
 
-                // list to guard against mod NPCs have the same birthday as original NPCss
+                // list to guard against mod NPCs have the same birthday as original NPCs
                 if (!birthdays.ContainsKey(birthSeasonDay)){
-                    birthdays[birthSeasonDay] = new List<string>();
+                    birthdays[birthSeasonDay] = new Dictionary<string, string>();
                 }
 
-                birthdays[birthSeasonDay].Add(npc.Key);
+                birthdays[birthSeasonDay].Add(npc.Key, data.DisplayName);
             }
 
             return birthdays;
@@ -193,7 +193,7 @@ namespace BirthdayQuest
             foreach (var id in npcLoved){
                 if (allObjectData.TryGetValue(id, out var itemData))
                 {
-                    lovedItems.Add(itemData.Name);
+                    lovedItems.Add(itemData.DisplayName);
                 }
             }
 
@@ -206,7 +206,7 @@ namespace BirthdayQuest
         ** load save - load all birthdays + all object items
         *********/
 
-        private Dictionary< (Season season, int Day), List<string>> allBirthday = new();
+        private Dictionary< (Season season, int Day), Dictionary<string, string>> allBirthday = new();
         private Dictionary<string, CharacterData> allCharacterData = new();
         private Dictionary<string, string> allGiftTaste = new();
         private Dictionary<string, ObjectData> allObjectData = new();
@@ -223,31 +223,31 @@ namespace BirthdayQuest
         ** day starts - load today's birthday npcs & add quest and notifications
         *********/
 
-        private List<string> GetTodayBirthdayNpcs()
+        private Dictionary<string, string> GetTodayBirthdayNpcs()
         {
             var currDate = SDate.Now();
             var today = (currDate.Season, currDate.Day);
 
-            var birthdays = this.allBirthday;
+            var birthdays = this.allBirthday; // elems of dict <string, string> 
 
             if (birthdays.TryGetValue(today, out var birthdayNpcs))
             {
-                var todayBirthdays = new List<string>(birthdayNpcs);
+                var todayBirthdays = new Dictionary<string, string>(birthdayNpcs);
 
                 if (Game1.year < 2)
                 {
                     todayBirthdays.Remove("Kent");
                 }
 
-                return new List<string>(todayBirthdays);
+                return new Dictionary<string, string>(todayBirthdays);
             }
-            return new List<string>();
+            return new Dictionary<string, string>();
 
         }
 
         private bool IsNpcKnown(string npc) => Game1.player.friendshipData.ContainsKey(npc);
 
-        private List<string> birthdayNpc =  new List<string>();
+        private Dictionary<string, string> birthdayNpc =  new Dictionary<string, string>();
 
         private void OnDayStarted(object? sender, DayStartedEventArgs e)
         {
@@ -260,12 +260,12 @@ namespace BirthdayQuest
             }
 
             foreach (var npc in birthdayNpc){
-                if (this.Config.SkipUnknownNpcs && !IsNpcKnown(npc))
+                if (this.Config.SkipUnknownNpcs && !IsNpcKnown(npc.Key))
                 {
                     continue;
                 }
-                
-                AddBirthdayQuest(npc);
+
+                AddBirthdayQuest(npc.Key, npc.Value);
             }
 
             //ShowNextBirthdayNotification();
@@ -324,10 +324,10 @@ namespace BirthdayQuest
         }
 
         // Register all birthday quests to special order data
-        private SpecialOrderData BuildBirthdaySpecialOrderData(string npc){
+        private SpecialOrderData BuildBirthdaySpecialOrderData(string npc, string npcDisplayName){
             
             var newSpecialOrder = new SpecialOrderData();
-            newSpecialOrder.Name = $"{npc}'s birthday";
+            newSpecialOrder.Name = $"{npcDisplayName}'s birthday";
             newSpecialOrder.Requester = npc;
             newSpecialOrder.Duration = QuestDuration.OneDay;
             // add custom OrderType to avoid quests showing up on town board + prize ticket reward
@@ -335,7 +335,7 @@ namespace BirthdayQuest
 
             var pronouns = this.GetPronouns(npc);
 
-            var baseText =  $"It's {npc}'s Birthday today! \nGive {pronouns.Object} something nice. ";
+            var baseText =  $"It's {npcDisplayName}'s Birthday today! \nGive {pronouns.Object} something nice. ";
 
             if (this.Config.LovedGiftsHint)
             {
@@ -364,7 +364,7 @@ namespace BirthdayQuest
             // add objective to order; need SpecialOrderObjectiveData
             var newObjective = new SpecialOrderObjectiveData();
             newObjective.Type = "Gift";
-            newObjective.Text = $"Give {npc} a birthday gift.";
+            newObjective.Text = $"Give {npcDisplayName} a birthday gift.";
             newObjective.RequiredCount = "1";
             newObjective.Data = new Dictionary<string, string>{{"TargetName", npc}, {"MinimumLikeLevel", "None"}};
             newSpecialOrder.Objectives = new List<SpecialOrderObjectiveData> {newObjective};
@@ -408,20 +408,20 @@ namespace BirthdayQuest
                 {
                     foreach (var npc in birthday.Value)
                     {
-                        if (this.Config.SkipUnknownNpcs && !IsNpcKnown(npc))
+                        if (this.Config.SkipUnknownNpcs && !IsNpcKnown(npc.Key))
                         {
                             continue;
                         }
-                        
-                        string orderId = $"BirthdayQuest.{npc}.BirthdayGift";
-                        data[orderId] = this.BuildBirthdaySpecialOrderData(npc);
+
+                        string orderId = $"BirthdayQuest.{npc.Key}.BirthdayGift";
+                        data[orderId] = this.BuildBirthdaySpecialOrderData(npc.Key, npc.Value);
                     }
                 }
             });
         }
 
         // add quest to active quests for birthday npcs
-        private void AddBirthdayQuest(string npc)
+        private void AddBirthdayQuest(string npc, string npcDisplayName)
         {
             var orderId = $"BirthdayQuest.{npc}.BirthdayGift";
 
@@ -434,11 +434,11 @@ namespace BirthdayQuest
         /*********
         ** Notifications
         *********/
-        private void BirthdayNotification(string npc)
+        private void BirthdayNotification(string npc, string npcDisplayName)
         {
             var pronoun = this.GetPronouns(npc);
 
-            string message = $"It's {npc}'s Birthday today! ^Consider giving {pronoun.Object} something nice.";
+            string message = $"It's {npcDisplayName}'s Birthday today! ^Consider giving {pronoun.Object} something nice.";
             Game1.activeClickableMenu = new DialogueBox(message);
         }
 
@@ -454,9 +454,11 @@ namespace BirthdayQuest
                 return;
             }
 
-            this.Monitor.Log($"{birthdayNpc[0]}'s birthday", LogLevel.Info);
-            BirthdayNotification(birthdayNpc[0]);
-            birthdayNpc.RemoveAt(0);
+            var npc = birthdayNpc.Keys.First();
+            var npcDisplayName = birthdayNpc[npc];
+            this.Monitor.Log($"{npc}'s birthday", LogLevel.Info);
+            BirthdayNotification(npc, npcDisplayName);
+            birthdayNpc.Remove(npc);
         }
 
         private void OnClosedMenu(object? sender, MenuChangedEventArgs e)
