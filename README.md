@@ -67,8 +67,6 @@ If you have [Generic Mod Config Menu](https://www.nexusmods.com/stardewvalley/mo
 - [x] add npc schedule to quest
 - [x] bug: gift tastes are using mod item names instead of display name
 - [x] bug: modded char names using raw name instead of display name
-- [ ] bug: Quest completes after giving any character a gift, not just the birthday person
-
-
+- [x] bug: Quest completes after giving any character a gift, not just the birthday person
 - [ ] add translation compatibility - check https://github.com/ernfu/StardewBirthdayQuest/pull/2/changes.
 - [ ] add gh release to UpdateKeys

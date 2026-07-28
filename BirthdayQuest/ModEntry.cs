@@ -5,10 +5,12 @@ using StardewValley;
 using StardewValley.GameData.Characters;
 using StardewValley.Menus;
 using StardewValley.GameData.SpecialOrders;
+using StardewValley.SpecialOrders;
 using StardewValley.GameData.Objects;
 using StardewValley.TokenizableStrings;
 using Microsoft.Xna.Framework.Graphics;
 using System.Diagnostics;
+using System.Linq.Expressions;
 
 namespace BirthdayQuest
 {
@@ -266,9 +268,10 @@ namespace BirthdayQuest
                     continue;
                 }
 
-                AddBirthdayQuest(npc.Key, npc.Value);
+                AddBirthdayQuest(npc.Key);
             }
 
+            AttachGiftHooks();
             //ShowNextBirthdayNotification();
         }
 
@@ -367,7 +370,9 @@ namespace BirthdayQuest
             newObjective.Type = "Gift";
             newObjective.Text = $"Give {npcDisplayName} a birthday gift.";
             newObjective.RequiredCount = "1";
-            newObjective.Data = new Dictionary<string, string>{{"TargetName", npc}, {"MinimumLikeLevel", "None"}};
+
+            // use AcceptedContextTags to stop quest from auto gifting, so we can set up own hook
+            newObjective.Data = new Dictionary<string, string>{{"AcceptedContextTags", "_bday_quest_placeholder"}, {"MinimumLikeLevel", "None"}};
             newSpecialOrder.Objectives = new List<SpecialOrderObjectiveData> {newObjective};
 
             // add rewards to order; need SpecialOrderRewardData
@@ -422,7 +427,7 @@ namespace BirthdayQuest
         }
 
         // add quest to active quests for birthday npcs
-        private void AddBirthdayQuest(string npc, string npcDisplayName)
+        private void AddBirthdayQuest(string npc)
         {
             var orderId = $"BirthdayQuest.{npc}.BirthdayGift";
 
@@ -430,6 +435,32 @@ namespace BirthdayQuest
 
             Game1.player.team.AddSpecialOrder(orderId, forceRepeatable: true);
 
+        }
+
+        // set up own gift hooks
+        private void AttachGiftHooks()
+        {
+            foreach (SpecialOrder specialOrder in Game1.player.team.specialOrders)
+            {
+
+                var questName = specialOrder.questKey.Value;
+                if (questName.StartsWith("BirthdayQuest."))
+                {
+                    specialOrder.onGiftGiven += (farmer, npc, item) => this.OnBirthdayGiftGiven(specialOrder, npc);
+                }
+                
+            }
+        }
+
+        private void OnBirthdayGiftGiven(SpecialOrder specialOrder, NPC npc)
+        {
+            if (specialOrder.requester.Value != npc.Name)
+            {
+                return;
+            }
+            this.Monitor.Log($"gift hook: to {npc.Name}; order id {specialOrder.questKey.Value} ", LogLevel.Info);
+
+            specialOrder.objectives[0].IncrementCount(1);
         }
 
         /*********
