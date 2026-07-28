@@ -43,6 +43,7 @@ Available Config options:
 - `BirthdayQuest`: adds a one-day birthday gift quest to your quest log. Default: `true`.
 - `LovedGiftsHint`: adds a list of loved gifts to the birthday quest text. Default: `false`.
 - `NpcScheduleHint`: adds the birthday NPC's schedule to the birthday quest text. Default: `false`.
+- `SkipUnknownNpcs`: skips reminders and quests for NPCs you haven't met yet. Default: `false`.
 
 You can also use GMCM (see below) to edit config values:
 

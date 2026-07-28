@@ -1,7 +1,7 @@
 {
     "Name": "Birthday Quest",
     "Author": "ernfu",
-    "Version": "1.3.1",
+    "Version": "1.4.0",
     "Description": "A quest for the birthday of the player",
     "UniqueID": "ern.birthdayquest",
     "EntryDll": "BirthdayQuest.dll",
