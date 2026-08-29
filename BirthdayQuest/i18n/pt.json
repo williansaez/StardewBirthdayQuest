@@ -1,0 +1,50 @@
+{
+    // Generic Mod Config Menu
+    "config.birthday-notification.name": "Aviso de aniversário",
+    "config.birthday-notification.tooltip": "Mostra uma mensagem ao acordar quando é aniversário de algum NPC.",
+    "config.birthday-quest.name": "Missão de aniversário",
+    "config.birthday-quest.tooltip": "Adiciona ao diário uma missão de 1 dia para entregar o presente de aniversário.",
+    "config.loved-gifts-hint.name": "Dica de presentes adorados",
+    "config.loved-gifts-hint.tooltip": "Adiciona ao texto da missão a lista de presentes que o aniversariante adora.",
+    "config.schedule-hint.name": "Dica de rotina",
+    "config.schedule-hint.tooltip": "Adiciona ao texto da missão a rotina do aniversariante no dia.",
+    "config.skip-unknown-npcs.name": "Ignorar NPCs desconhecidos",
+    "config.skip-unknown-npcs.tooltip": "Não avisa sobre aniversários de NPCs que você ainda não conheceu.",
+
+    // conjuntos de pronomes, escolhidos pelo gênero do NPC em Data/Characters
+    "pronouns.male.subject": "ele",
+    "pronouns.male.object": "ele",
+    "pronouns.male.possessive": "dele",
+    "pronouns.male.love-verb": "adora",
+    "pronouns.female.subject": "ela",
+    "pronouns.female.object": "ela",
+    "pronouns.female.possessive": "dela",
+    "pronouns.female.love-verb": "adora",
+    "pronouns.unknown.subject": "essa pessoa",
+    "pronouns.unknown.object": "essa pessoa",
+    "pronouns.unknown.possessive": "dessa pessoa",
+    "pronouns.unknown.love-verb": "adora",
+
+    // tokens disponíveis em todos os textos abaixo:
+    //   {{npc}}                  nome do NPC (já traduzido pelo jogo)
+    //   {{subject}}              ele / ela                {{subjectCap}}          Ele / Ela
+    //   {{objectPronoun}}        ele / ela                {{objectPronounCap}}    Ele / Ela
+    //   {{possessive}}           dele / dela              {{possessiveCap}}       Dele / Dela
+    //   {{loveVerb}}             adora
+    //   {{items}}                lista de presentes adorados (só em quest.loved-gifts)
+
+    // aviso ao acordar ('^' é quebra de linha na caixa de diálogo)
+    "notification.message": "Hoje é o aniversário de {{npc}}! ^Que tal dar algo especial para {{objectPronoun}}?",
+
+    // diário de missões
+    "quest.name": "Aniversário de {{npc}}",
+    "quest.text": "Hoje é o aniversário de {{npc}}! \nDê algo especial para {{objectPronoun}}. ",
+    "quest.objective": "Dê um presente de aniversário para {{npc}}.",
+
+    // dica de presentes adorados
+    "quest.loved-gifts": "{{subjectCap}} {{loveVerb}} {{items}}.",
+    "list.final-separator": " e ",
+
+    // dica de rotina; as linhas de horário vêm logo abaixo
+    "schedule.header": "A rotina {{possessive}} hoje é:"
+}

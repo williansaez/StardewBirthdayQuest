@@ -10,7 +10,6 @@ using StardewValley.GameData.Objects;
 using StardewValley.TokenizableStrings;
 using Microsoft.Xna.Framework.Graphics;
 using System.Diagnostics;
-using System.Linq.Expressions;
 
 namespace BirthdayQuest
 {
@@ -24,7 +23,7 @@ namespace BirthdayQuest
         *********/
         /// <summary>The mod entry point, called after the mod is first loaded.</summary>
         /// <param name="helper">Provides simplified APIs for writing mods.</param>
-        
+
         public override void Entry(IModHelper helper)
         {
             this.Config = this.Helper.ReadConfig<ModConfig>();
@@ -46,6 +45,33 @@ namespace BirthdayQuest
         /*********
         ** Private methods
         *********/
+
+        /*********
+        ** i18n helpers
+        *********/
+
+        /// <summary>Get a translation, falling back to the default (English) text.</summary>
+        private string T(string key)
+        {
+            return this.Helper.Translation.Get(key);
+        }
+
+        /// <summary>Get a translation with tokens, falling back to the default (English) text.</summary>
+        private string T(string key, object tokens)
+        {
+            return this.Helper.Translation.Get(key, tokens);
+        }
+
+        /// <summary>Uppercase the first character of a word (safe for empty strings).</summary>
+        private static string Cap(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+            {
+                return text;
+            }
+
+            return char.ToUpper(text[0]) + text[1..];
+        }
 
         /*********
         ** GMCM supports
@@ -74,40 +100,40 @@ namespace BirthdayQuest
             // add some config options
             configMenu.AddBoolOption(
                 mod: this.ModManifest,
-                name: () => "Birthday notification",
-                tooltip: () => "Shows a wake-up message when today is an NPC's birthday.",
+                name: () => this.T("config.birthday-notification.name"),
+                tooltip: () => this.T("config.birthday-notification.tooltip"),
                 getValue: () => this.Config.BirthdayNotification,
                 setValue: value => this.Config.BirthdayNotification = value
             );
 
             configMenu.AddBoolOption(
                 mod: this.ModManifest,
-                name: () => "Birthday quest",
-                tooltip: () => "Adds a one-day birthday gift quest to your quest log.",
+                name: () => this.T("config.birthday-quest.name"),
+                tooltip: () => this.T("config.birthday-quest.tooltip"),
                 getValue: () => this.Config.BirthdayQuest,
                 setValue: value => this.Config.BirthdayQuest = value
             );
 
             configMenu.AddBoolOption(
                 mod: this.ModManifest,
-                name: () => "Loved gifts hint",
-                tooltip: () => "Adds a list of loved gifts to the birthday quest text.",
+                name: () => this.T("config.loved-gifts-hint.name"),
+                tooltip: () => this.T("config.loved-gifts-hint.tooltip"),
                 getValue: () => this.Config.LovedGiftsHint,
                 setValue: value => this.Config.LovedGiftsHint = value
             );
 
             configMenu.AddBoolOption(
                 mod: this.ModManifest,
-                name: () => "Schedule hint",
-                tooltip: () => "Adds the birthday NPC's schedule to the gifting quest",
+                name: () => this.T("config.schedule-hint.name"),
+                tooltip: () => this.T("config.schedule-hint.tooltip"),
                 getValue: () => this.Config.NpcScheduleHint,
                 setValue: value => this.Config.NpcScheduleHint = value
             );
 
             configMenu.AddBoolOption(
                 mod: this.ModManifest,
-                name: () => "Skip unknown NPCs",
-                tooltip: () => "Skip notifications for NPCs you haven't met yet.",
+                name: () => this.T("config.skip-unknown-npcs.name"),
+                tooltip: () => this.T("config.skip-unknown-npcs.tooltip"),
                 getValue: () => this.Config.SkipUnknownNpcs,
                 setValue: value => this.Config.SkipUnknownNpcs = value
             );
@@ -125,7 +151,7 @@ namespace BirthdayQuest
 
             foreach (var npc in allCharacterData)
             {
-                
+
                 CharacterData data = npc.Value;
 
                 // mod compatible way - BirthSeason could be null
@@ -134,7 +160,7 @@ namespace BirthdayQuest
                     continue;
                 }
 
-                // skip if not sociable 
+                // skip if not sociable
                 if (data.CanSocialize == "false")
                 {
                     continue;
@@ -184,8 +210,6 @@ namespace BirthdayQuest
             var hated = NormaliseTasteString(blocks[7]);
             var neutral = NormaliseTasteString(blocks[9]);
 
-            // var npcLoved = universalLove.Concat(loved).ToList();
-
             var delete = liked.Concat(disliked).Concat(hated).Concat(neutral).ToList();
 
             universalLove.RemoveAll(item => delete.Contains(item));
@@ -200,7 +224,8 @@ namespace BirthdayQuest
                 }
             }
 
-            lovedItems.Sort();
+            // sort by the player's language rules (accented names land in the right place in PT-BR)
+            lovedItems.Sort(StringComparer.CurrentCulture);
 
             return lovedItems;
         }
@@ -231,7 +256,7 @@ namespace BirthdayQuest
             var currDate = SDate.Now();
             var today = (currDate.Season, currDate.Day);
 
-            var birthdays = this.allBirthday; // elems of dict <string, string> 
+            var birthdays = this.allBirthday; // elems of dict <string, string>
 
             if (birthdays.TryGetValue(today, out var birthdayNpcs))
             {
@@ -281,30 +306,56 @@ namespace BirthdayQuest
 
         private record PronounSet(string Subject, string Object, string Possessive, string LoveVerb);
 
+        /// <summary>Build a pronoun set from the i18n files, so each translation picks its own wording.</summary>
+        private PronounSet GetPronounSet(string genderKey)
+        {
+            return new PronounSet(
+                this.T($"pronouns.{genderKey}.subject"),
+                this.T($"pronouns.{genderKey}.object"),
+                this.T($"pronouns.{genderKey}.possessive"),
+                this.T($"pronouns.{genderKey}.love-verb")
+            );
+        }
+
         private PronounSet GetPronouns(string npc)
         {
-            var pronounsUnknown = new PronounSet("they", "them", "their", "love");
-
             if (!this.allCharacterData.TryGetValue(npc, out var data))
             {
-                return pronounsUnknown;
+                return this.GetPronounSet("unknown");
             }
 
             switch (data.Gender)
             {
                 case Gender.Male:
-                    return new PronounSet("he", "him", "his", "loves");
+                    return this.GetPronounSet("male");
 
                 case Gender.Female:
-                    return new PronounSet("she", "her", "her", "loves");
+                    return this.GetPronounSet("female");
 
                 case Gender.Undefined:
-                    return pronounsUnknown;
+                    return this.GetPronounSet("unknown");
 
                 default:
-                    return pronounsUnknown;
+                    return this.GetPronounSet("unknown");
 
             }
+        }
+
+        /// <summary>Build the token bag handed to every translated string.</summary>
+        private object BuildTokens(PronounSet pronouns, string? npcDisplayName = null, string? items = null)
+        {
+            return new
+            {
+                npc = npcDisplayName ?? string.Empty,
+                items = items ?? string.Empty,
+                subject = pronouns.Subject,
+                subjectCap = Cap(pronouns.Subject),
+                objectPronoun = pronouns.Object,
+                objectPronounCap = Cap(pronouns.Object),
+                possessive = pronouns.Possessive,
+                possessiveCap = Cap(pronouns.Possessive),
+                loveVerb = pronouns.LoveVerb
+            };
         }
 
         /*********
@@ -313,33 +364,36 @@ namespace BirthdayQuest
 
         private string FancyJoin(List<string> lovedItems, PronounSet pronoun)
         {
-            var loveWord = pronoun.LoveVerb;
-            var subject = char.ToUpper(pronoun.Subject[0]) + pronoun.Subject[1..];
+            string items;
 
             if (lovedItems.Count == 1)
             {
-                return $"\n\n{subject} {loveWord} " + lovedItems[0] + ".";
+                items = lovedItems[0];
+            }
+            else
+            {
+                var front = lovedItems.Take(lovedItems.Count - 1);
+                var last = lovedItems[^1];
+                items = string.Join(", ", front) + this.T("list.final-separator") + last;
             }
 
-            var front = lovedItems.Take(lovedItems.Count - 1);
-            var last = lovedItems[lovedItems.Count - 1];
-
-            return $"\n\n{subject} {loveWord} " + string.Join(", ", front) + ", and " + last + ".";
+            return "\n\n" + this.T("quest.loved-gifts", this.BuildTokens(pronoun, items: items));
         }
 
         // Register all birthday quests to special order data
         private SpecialOrderData BuildBirthdaySpecialOrderData(string npc, string npcDisplayName){
-            
+
             var newSpecialOrder = new SpecialOrderData();
-            newSpecialOrder.Name = $"{npcDisplayName}'s birthday";
+            var pronouns = this.GetPronouns(npc);
+            var tokens = this.BuildTokens(pronouns, npcDisplayName);
+
+            newSpecialOrder.Name = this.T("quest.name", tokens);
             newSpecialOrder.Requester = npc;
             newSpecialOrder.Duration = QuestDuration.OneDay;
             // add custom OrderType to avoid quests showing up on town board + prize ticket reward
             newSpecialOrder.OrderType = "BirthdayQuest";
 
-            var pronouns = this.GetPronouns(npc);
-
-            var baseText =  $"It's {npcDisplayName}'s Birthday today! \nGive {pronouns.Object} something nice. ";
+            var baseText = this.T("quest.text", tokens);
 
             if (this.Config.LovedGiftsHint)
             {
@@ -360,15 +414,12 @@ namespace BirthdayQuest
                 }
             }
 
-            //var likedItems = this.GetItemByTaste(npc, "like");
-            //var likedItemsText = "\n\nThey like " + string.Join(", ", likedItems) + ".";
-
             newSpecialOrder.Text = baseText;
 
             // add objective to order; need SpecialOrderObjectiveData
             var newObjective = new SpecialOrderObjectiveData();
             newObjective.Type = "Gift";
-            newObjective.Text = $"Give {npcDisplayName} a birthday gift.";
+            newObjective.Text = this.T("quest.objective", tokens);
             newObjective.RequiredCount = "1";
 
             // use AcceptedContextTags to stop quest from auto gifting, so we can set up own hook
@@ -386,7 +437,6 @@ namespace BirthdayQuest
 
         private void OnAssetRequested(object? sender, AssetRequestedEventArgs e)
         {
-            //here
             if (!e.NameWithoutLocale.IsEquivalentTo("Data/SpecialOrders"))
             {
                 return;
@@ -448,7 +498,7 @@ namespace BirthdayQuest
                 {
                     specialOrder.onGiftGiven += (farmer, npc, item) => this.OnBirthdayGiftGiven(specialOrder, npc);
                 }
-                
+
             }
         }
 
@@ -468,9 +518,10 @@ namespace BirthdayQuest
         *********/
         private void BirthdayNotification(string npc, string npcDisplayName)
         {
-            var pronoun = this.GetPronouns(npc);
+            var pronouns = this.GetPronouns(npc);
 
-            string message = $"It's {npcDisplayName}'s Birthday today! ^Consider giving {pronoun.Object} something nice.";
+            string message = this.T("notification.message", this.BuildTokens(pronouns, npcDisplayName));
+
             Game1.activeClickableMenu = new DialogueBox(message);
         }
 
@@ -512,7 +563,6 @@ namespace BirthdayQuest
         // notification shows after black screen disappears - fix with check below
         private void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
         {
-            //here
             if (birthdayNpc.Count == 0)
             {
                 return;
@@ -564,18 +614,32 @@ namespace BirthdayQuest
                output += $"\n{time} - {dest}";
             }
 
-            var possessive = char.ToUpper(pronouns.Possessive[0]) + pronouns.Possessive[1..];
-            output = possessive + " schedule today is:" + output;
+            output = this.T("schedule.header", this.BuildTokens(pronouns)) + output;
 
             return output;
         }
 
+        /// <summary>Format a schedule time using the game's own clock format (follows the game language and 24-hour setting).</summary>
         private string FormatTime(int time)
         {
+            try
+            {
+                var formatted = Game1.getTimeOfDayString(time);
+                if (!string.IsNullOrWhiteSpace(formatted))
+                {
+                    return formatted.Trim();
+                }
+            }
+            catch (Exception ex)
+            {
+                this.Monitor.LogOnce($"could not format time {time} with the game formatter, using the 12-hour fallback: {ex.Message}", LogLevel.Trace);
+            }
+
+            // fallback - upstream 12-hour format
             var hour = (time / 100) % 24;
             var mins = time % 100;
 
-            bool isPm = hour >=12;
+            bool isPm = hour >= 12;
 
             string suffix = isPm ? "pm" : "am";
 

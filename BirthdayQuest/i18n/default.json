@@ -1,0 +1,50 @@
+{
+    // Generic Mod Config Menu
+    "config.birthday-notification.name": "Birthday notification",
+    "config.birthday-notification.tooltip": "Shows a wake-up message when today is an NPC's birthday.",
+    "config.birthday-quest.name": "Birthday quest",
+    "config.birthday-quest.tooltip": "Adds a one-day birthday gift quest to your quest log.",
+    "config.loved-gifts-hint.name": "Loved gifts hint",
+    "config.loved-gifts-hint.tooltip": "Adds a list of loved gifts to the birthday quest text.",
+    "config.schedule-hint.name": "Schedule hint",
+    "config.schedule-hint.tooltip": "Adds the birthday NPC's schedule to the gifting quest",
+    "config.skip-unknown-npcs.name": "Skip unknown NPCs",
+    "config.skip-unknown-npcs.tooltip": "Skip notifications for NPCs you haven't met yet.",
+
+    // pronoun sets, chosen by the NPC's gender in Data/Characters
+    "pronouns.male.subject": "he",
+    "pronouns.male.object": "him",
+    "pronouns.male.possessive": "his",
+    "pronouns.male.love-verb": "loves",
+    "pronouns.female.subject": "she",
+    "pronouns.female.object": "her",
+    "pronouns.female.possessive": "her",
+    "pronouns.female.love-verb": "loves",
+    "pronouns.unknown.subject": "they",
+    "pronouns.unknown.object": "them",
+    "pronouns.unknown.possessive": "their",
+    "pronouns.unknown.love-verb": "love",
+
+    // every string below can use these tokens:
+    //   {{npc}}                  the NPC's display name (already translated by the game)
+    //   {{subject}}              he / she / they          {{subjectCap}}          He / She / They
+    //   {{objectPronoun}}        him / her / them         {{objectPronounCap}}    Him / Her / Them
+    //   {{possessive}}           his / her / their        {{possessiveCap}}       His / Her / Their
+    //   {{loveVerb}}             loves / love
+    //   {{items}}                the joined loved-item list (quest.loved-gifts only)
+
+    // wake-up notification ('^' is a line break in dialogue boxes)
+    "notification.message": "It's {{npc}}'s Birthday today! ^Consider giving {{objectPronoun}} something nice.",
+
+    // quest log
+    "quest.name": "{{npc}}'s birthday",
+    "quest.text": "It's {{npc}}'s Birthday today! \nGive {{objectPronoun}} something nice. ",
+    "quest.objective": "Give {{npc}} a birthday gift.",
+
+    // loved gifts hint
+    "quest.loved-gifts": "{{subjectCap}} {{loveVerb}} {{items}}.",
+    "list.final-separator": ", and ",
+
+    // schedule hint; the schedule lines follow below this header
+    "schedule.header": "{{possessiveCap}} schedule today is:"
+}
